@@ -36,8 +36,11 @@ export class User {
   @Prop()
   address: string;
 
-  @Prop()
+  @Prop({ required: true, default: "client" })
   type: string;
+
+  @Prop({ required: true, default: 1 })
+  active: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
