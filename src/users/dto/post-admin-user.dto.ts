@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsEmail } from 'class-validator';
 
-export class PostUserDto {
+export class PostAdminUserDto {
     @IsNotEmpty()
     username: string;
     
@@ -9,19 +9,7 @@ export class PostUserDto {
 
     @IsNotEmpty()
     @IsEmail()
-    email: string
-    
-    name: string;
-    
-    lastname: string;
-    
-    image: string;
-    
-    biography: string;
-    
-    phone: string;
-    
-    address: string;
+    email: string;
     
     role: string;
 }

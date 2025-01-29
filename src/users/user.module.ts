@@ -5,7 +5,6 @@ import { BootModule } from 'src/config.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import {User, UserSchema} from './schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [

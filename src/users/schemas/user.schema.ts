@@ -36,10 +36,12 @@ export class User {
   @Prop()
   address: string;
 
-  @Prop({ required: true, default: "client" })
-  type: string;
+  // Administrador (a), Cliente (c)
+  @Prop({ required: true, default: "c", enum: ["s", "a", "c"]})
+  role: string;
 
-  @Prop({ required: true, default: 1 })
+  //Activado (1), Desactivado (0)
+  @Prop({ required: true, default: 1, enum: [0, 1] })
   active: number;
 }
 

@@ -19,5 +19,5 @@ export class GetUserDto{
     
     address: string;
     
-    type: string;
+    role: string;
 }
