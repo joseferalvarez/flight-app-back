@@ -24,8 +24,11 @@ export class User {
   @Prop()
   lastname: string;
 
-  @Prop()
-  image: string;
+  @Prop({type: Object})
+  image: {
+    image_name: string;
+    image_url: string;
+  }
 
   @Prop()
   biography: string;

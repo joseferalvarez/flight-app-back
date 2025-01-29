@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Res, UseGuards, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Res, UseGuards, Headers, UseInterceptors, UploadedFile, NotFoundException } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { PostUserDto } from './dto/post-user.dto';
 import { PutUserDto } from './dto/put-user.dto';
@@ -7,6 +7,7 @@ import { LogInUserDto } from './dto/login-user.dto';
 import { PostAdminUserDto } from './dto/post-admin-user.dto';
 import { Response } from 'express';
 import { AuthGuard, AdminGuard, SuperAdminGuard } from 'src/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 
 @Controller()
@@ -46,8 +47,8 @@ export class UsersController {
   /** Client endpoints */
   @UseGuards(AuthGuard)
   @Get('/users/:uuid/')
-  async getUser(@Param('uuid') uuid: string, @Headers() headers){
-    return this.usersService.getUser(uuid, headers);
+  async getUser(@Param('uuid') uuid: string){
+    return this.usersService.getUser(uuid);
   }
 
   @UseGuards(AuthGuard)
@@ -63,8 +64,15 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Put('/users/delete')
+  @Put('/users/delete/')
   async deactivateUser(@Param('uuid') uuid: string){
     return this.usersService.deactivateUser(uuid);
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('/users/image/:uuid')
+  @UseInterceptors(FileInterceptor('file'))
+  async putUserImage(@Param('uuid') uuid: string, @UploadedFile() file){
+    return this.usersService.putUserImage(uuid, file);
   }
 }

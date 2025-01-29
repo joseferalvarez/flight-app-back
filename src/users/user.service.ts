@@ -1,20 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { PostUserDto } from './dto/post-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
 import { PutUserDto } from './dto/put-user.dto';
 import { Model } from "mongoose";
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PostAdminUserDto } from './dto/post-admin-user.dto';
 import { LogInUserDto } from './dto/login-user.dto';
+import * as Minio from 'minio';
+import {v4 as uuidv4} from 'uuid';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userSchema: Model<UserDocument>,
+    @Inject('MINIO_CLIENT') private readonly minioClient: Minio.Client,
     private readonly jwtService: JwtService
   ){}
 
@@ -39,22 +41,38 @@ export class UsersService {
     return accessToken;
   }
 
-  private async userValid(authorization, uuid): Promise<boolean>{
-    const token = authorization.split(" ")[1];
-    const payload = await this.jwtService.decode(token);
-
-    if(payload.role === "c" && payload.sub !== uuid) return false;
-
-    return true;
-  }
-
   async getUsers(): Promise<GetUserDto[]> {
     const UserModel = this.userSchema;
 
     try{
-      const users = await UserModel.find({}).exec();
+      const users = await UserModel.find();
+
+      const usersList = await Promise.all(users.map(async (user) => {
+        if(!user.image || !user.image.image_url) return user;
+
+        const res = await fetch(user.image.image_url);
+
+        if(res.status === 403){
+          const bucketName = process.env.MINIO_DEFAULT_BUCKETS || 'default';
+          const bucketExist = await this.minioClient.bucketExists(bucketName);
+        
+          const signedUrl = await this.minioClient.presignedUrl('GET', bucketName, `users/${user.uuid}/${user.image.image_name}`, 43200);
+
+          const dbUser = await UserModel.findOneAndUpdate({ uuid: user.uuid }, {
+              image: {
+                image_url: signedUrl
+              }
+            }, { new: true });
+
+          if(!dbUser) throw new NotFoundException('User not found.');
+
+          return dbUser;
+        }
+
+        return user;
+      }));
     
-      return users;
+      return usersList.filter(user => user);
     }catch(e){
       throw new BadRequestException(`Error listing the users: ${e}`);
     }
@@ -106,17 +124,34 @@ export class UsersService {
     }
   }
 
-  async getUser(uuid, headers): Promise<GetUserDto>{
+  async getUser(uuid): Promise<GetUserDto>{
     const UserModel = this.userSchema;
-
-    const userValid = await this.userValid(headers.authorization, uuid);
-
-    //if(!userValid) throw new UnauthorizedException("You have not access to this resource.")
 
     try{
       const user = await UserModel.findOne({ uuid: uuid }).exec();
 
       if(!user) throw new NotFoundException(`User with id ${uuid} not found`);
+
+      const res = await fetch(user.image.image_url);
+
+      if(res.status === 403){
+        const bucketName = process.env.MINIO_DEFAULT_BUCKETS || 'default';
+        const bucketExist = await this.minioClient.bucketExists(bucketName);
+    
+        if(!bucketExist) throw new BadRequestException('The bucket storage dont exists');
+
+        const signedUrl = await this.minioClient.presignedUrl('GET', bucketName, `users/${uuid}/${user.image.image_name}`, 43200);
+
+        const dbUser = await UserModel.findOneAndUpdate({ uuid: uuid }, {
+          image: {
+            image_url: signedUrl
+          }
+       }, { new: true });
+
+       if(!dbUser) throw new NotFoundException('User not found.');
+
+       return dbUser;
+      }
 
       return user;
     }catch(e){
@@ -226,6 +261,41 @@ export class UsersService {
       if(!dbUser) throw new NotFoundException('User not found');
     }catch(e){
       throw new BadRequestException(`Error deactivating the user: ${e}`)
+    }
+  }
+
+  async putUserImage(uuid, file){
+    const bucketName = process.env.MINIO_DEFAULT_BUCKETS || 'default';
+    const bucketExist = await this.minioClient.bucketExists(bucketName);
+
+    if(!bucketExist) throw new BadRequestException('The bucket storage dont exists');
+
+    const imageUuid = uuidv4();
+    const imageExtension = file.originalname.split('.').pop();
+
+    const imageName = `${imageUuid}.${imageExtension}`;
+
+    const objectName = `users/${uuid}/${imageName}`;
+
+    try{
+      const UserModel = this.userSchema;
+
+      await this.minioClient.putObject(bucketName, objectName, file.buffer, file.size, {
+        'Content-Type': file.mimetype
+      });
+
+      const signedUrl = await this.minioClient.presignedUrl('GET', bucketName, objectName, 10800);
+
+      const dbUser = await UserModel.findOneAndUpdate({ uuid: uuid }, { 
+        image: {
+          image_name: imageName,
+          image_url: signedUrl
+        }
+       }, { new: true });
+      
+      return dbUser;
+    }catch(e){
+      throw new BadRequestException('The user image has not uploaded.')
     }
   }
 }

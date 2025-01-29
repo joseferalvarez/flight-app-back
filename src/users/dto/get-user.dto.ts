@@ -11,7 +11,10 @@ export class GetUserDto{
     
     lastname: string;
     
-    image: string;
+    image: {
+        image_name: string;
+        image_url: string;
+    }
     
     biography: string;
     

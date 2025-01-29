@@ -15,8 +15,6 @@ export class PostUserDto {
     
     lastname: string;
     
-    image: string;
-    
     biography: string;
     
     phone: string;
