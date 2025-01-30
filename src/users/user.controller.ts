@@ -64,9 +64,15 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Put('/users/delete/')
+  @Put('/users/deactivate/')
   async deactivateUser(@Param('uuid') uuid: string){
-    return this.usersService.deactivateUser(uuid);
+    return this.usersService.changeUserState(uuid, 0);
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('/users/activate/')
+  async activateUser(@Param('uuid') uuid: string){
+    return this.usersService.changeUserState(uuid, 1);
   }
 
   @UseGuards(AuthGuard)
