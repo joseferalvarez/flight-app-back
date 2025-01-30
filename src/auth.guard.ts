@@ -21,8 +21,6 @@ export class AuthGuard implements CanActivate{
         try{
             const payload = await this.jwtService.verifyAsync(token, { secret: process.env.JWT_SALT });
 
-            console.log(role)
-
             if(
                 (role === "a" && payload.role === "c") ||
                 (role === "s" && (payload.role === "c" || payload.role === "a"))    

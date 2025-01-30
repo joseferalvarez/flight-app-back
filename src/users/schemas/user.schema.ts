@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import {v4 as uuidv4} from "uuid";
+import { Image } from 'src/schemas/image.schema';
+import { Document, Schema as MongooseSchema } from "mongoose";
+import { Travel } from 'src/travels/schema/travel.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -24,11 +27,8 @@ export class User {
   @Prop()
   lastname: string;
 
-  @Prop({type: Object})
-  image: {
-    image_name: string;
-    image_url: string;
-  }
+  @Prop()
+  image: Image;
 
   @Prop()
   biography: string;
@@ -39,13 +39,16 @@ export class User {
   @Prop()
   address: string;
 
-  // Administrador (a), Cliente (c)
+  // Superadministrador (s), Administrador (a), Cliente (c)
   @Prop({ required: true, default: "c", enum: ["s", "a", "c"]})
   role: string;
 
   //Activado (1), Desactivado (0)
   @Prop({ required: true, default: 1, enum: [0, 1] })
   active: number;
+
+  @Prop({ ref: 'travels', type: MongooseSchema.Types.ObjectId })
+  travels: Travel[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

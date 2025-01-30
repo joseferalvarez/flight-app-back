@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { PostUserDto } from './dto/post-user.dto';
@@ -10,11 +10,14 @@ import { JwtService } from '@nestjs/jwt';
 import { PostAdminUserDto } from './dto/post-admin-user.dto';
 import { LogInUserDto } from './dto/login-user.dto';
 import * as Minio from 'minio';
+import { RefreshTokenDto } from './dto/refresh-token-dto';
+import { Image, ImageDocument } from 'src/schemas/image.schema';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userSchema: Model<UserDocument>,
+    @InjectModel(Image.name) private imageSchema: Model<ImageDocument>,
     @Inject('MINIO_CLIENT') private readonly minioClient: Minio.Client,
     private readonly jwtService: JwtService
   ){}
@@ -34,12 +37,40 @@ export class UsersService {
       role: user.role
     }
 
-    const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.jwtService.signAsync(payload, {expiresIn: "120 days"});
+    const accessToken = await this.jwtService.signAsync(payload, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
+    const refreshToken = await this.jwtService.signAsync(payload, {expiresIn: process.env.REFRESH_TOKEN_EXPIRATION});
     response.cookie('access_token', accessToken);
     response.cookie('refresh_token', refreshToken);
 
     return {accessToken: accessToken, refreshToken: refreshToken};
+  }
+
+  async refreshAccessToken(request, response): Promise<RefreshTokenDto>{
+    
+    const refreshToken = request.cookies['refresh_token'];
+
+    if(!refreshToken) throw new NotFoundException('The refresh token has no been found.');
+
+    const payload = await this.jwtService.verifyAsync(refreshToken, { secret: process.env.JWT_SALT });
+
+    const newPayload = {
+      sub: payload.uuid,
+      username: payload.username,
+      email: payload.email,
+      role: payload.role
+    };
+
+    if(!payload) throw new UnauthorizedException('The refresh token is not valid.');
+
+    const newAccessToken = await this.jwtService.signAsync(newPayload, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
+    const newRefreshToken = await this.jwtService.signAsync(newPayload, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION });
+    response.cookie('access_token', newAccessToken);
+    response.cookie('refresh_token', newRefreshToken);
+
+    return {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken
+    };
   }
 
   async getUsers(): Promise<GetUserDto[]> {
@@ -234,6 +265,7 @@ export class UsersService {
 
     try{
       const UserModel = this.userSchema;
+      const ImageModel = this.imageSchema;
 
       await this.minioClient.putObject(bucketName, objectName, file.buffer, file.size, {
         'Content-Type': file.mimetype
@@ -241,12 +273,12 @@ export class UsersService {
 
       const signedUrl = await this.minioClient.presignedUrl('GET', bucketName, objectName);
 
-      const dbUser = await UserModel.findOneAndUpdate({ uuid: uuid }, { 
-        image: {
-          image_name: imageName,
-          image_url: signedUrl
-        }
-       }, { new: true });
+      const image = new ImageModel({
+        uuid: uuid(),
+        url: signedUrl
+      });
+
+      const dbUser = await UserModel.findOneAndUpdate({ uuid: uuid }, { image: image }, { new: true });
       
       return dbUser;
     }catch(e){

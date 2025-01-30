@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Res, UseGuards, Headers, UseInterceptors, UploadedFile, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Res, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { PostUserDto } from './dto/post-user.dto';
 import { PutUserDto } from './dto/put-user.dto';
 import { SignUserDto } from './dto/sign-user.dto';
 import { LogInUserDto } from './dto/login-user.dto';
 import { PostAdminUserDto } from './dto/post-admin-user.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthGuard, AdminGuard, SuperAdminGuard } from 'src/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -23,6 +23,11 @@ export class UsersController {
   @Post('/login/')
   async logIn(@Body() user: LogInUserDto, @Res({passthrough: true}) response: Response){
     return this.usersService.logIn(user, response);
+  }
+
+  @Post('/refresh/')
+  async refreshAccessToken(@Req() request: Request, @Res({passthrough: true}) response: Response){
+    return this.usersService.refreshAccessToken(request, response);
   }
 
   /** Admin endpoints  */

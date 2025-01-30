@@ -1,4 +1,5 @@
 import { IsNotEmpty } from "class-validator";
+import { Image } from "src/schemas/image.schema";
 
 export class GetUserDto{
     @IsNotEmpty()
@@ -11,10 +12,7 @@ export class GetUserDto{
     
     lastname: string;
     
-    image: {
-        image_name: string;
-        image_url: string;
-    }
+    image: Image;
     
     biography: string;
     

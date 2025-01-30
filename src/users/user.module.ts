@@ -15,10 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
     }]),
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SALT || "salt",
-      signOptions: {
-        expiresIn: "90 days"
-      }
+      secret: process.env.JWT_SALT || "salt"
     })
   ],
   controllers: [UsersController],
