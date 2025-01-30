@@ -8,7 +8,7 @@ import { Travel, TravelSchema } from './schema/travel.schema';
 import { Attachment, AttachmentSchema } from 'src/schemas/attachment.schema';
 import { Itinerary, ItinerarySchema } from 'src/schemas/itinerary.schema';
 import { Task, TaskSchema } from 'src/schemas/task.schema';
-import { ImageSchema } from 'src/schemas/image.schema';
+import { Image, ImageSchema } from 'src/schemas/image.schema';
 
 @Module({
   imports: [

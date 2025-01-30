@@ -12,6 +12,7 @@ import { LogInUserDto } from './dto/login-user.dto';
 import * as Minio from 'minio';
 import { RefreshTokenDto } from './dto/refresh-token-dto';
 import { Image, ImageDocument } from 'src/schemas/image.schema';
+import {v4 as uuidv4} from 'uuid';
 
 @Injectable()
 export class UsersService {
@@ -225,7 +226,7 @@ export class UsersService {
 
       if(!dbUser) throw new NotFoundException(`The email is not correct, sign in with a new user.`);
 
-      const {accessToken, refreshToken} = await this.generateAccessToken(user, response);
+      const {accessToken, refreshToken} = await this.generateAccessToken(dbUser, response);
 
       return {
         user: dbUser,
@@ -265,7 +266,6 @@ export class UsersService {
 
     try{
       const UserModel = this.userSchema;
-      const ImageModel = this.imageSchema;
 
       await this.minioClient.putObject(bucketName, objectName, file.buffer, file.size, {
         'Content-Type': file.mimetype
@@ -273,8 +273,8 @@ export class UsersService {
 
       const signedUrl = await this.minioClient.presignedUrl('GET', bucketName, objectName);
 
-      const image = new ImageModel({
-        uuid: uuid(),
+      const image = new this.imageSchema({
+        uuid: uuidv4(),
         url: signedUrl
       });
 

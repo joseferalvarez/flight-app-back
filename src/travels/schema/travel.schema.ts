@@ -16,29 +16,29 @@ export class Travel{
     uuid: string;
 
     @Prop({type: String, required: true})
-    name: string
+    name: string;
 
     @Prop({type: Date})
-    init_date: Date
+    init_date: Date;
 
     @Prop({type: Date})
-    end_date: Date
+    end_date: Date;
     
     // 0: Cancelado, 1: Pendiente, 2: En curso, 3: Finalizado
     @Prop({required: true, default: 1, enum: [0, 1, 2, 3]})
-    status: number
+    status: number;
 
     @Prop()
-    tasks: Task[]
+    tasks: Task[];
 
     @Prop()
     attachments: Attachment[]
 
     @Prop({ required: true, ref: 'users', type: MongooseSchema.Types.ObjectId })
-    owner: User
+    owner: User;
 
-    @Prop({ ref: 'users', type: MongooseSchema.Types.ObjectId })
-    partners: User[]
+    @Prop({ ref: 'users', type: [MongooseSchema.Types.ObjectId] })
+    partners: User[];
 
     @Prop()
     gallery: Image[];
