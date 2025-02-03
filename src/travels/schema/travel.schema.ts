@@ -7,6 +7,7 @@ import { Document, Schema as MongooseSchema } from "mongoose";
 import { Image } from "src/schemas/image.schema";
 import { Attachment } from "src/schemas/attachment.schema";
 import { Task } from "src/schemas/task.schema";
+import { Partner } from "src/schemas/partner.schema";
 
 export type TravelDocument = HydratedDocument<Travel>;
 
@@ -37,8 +38,8 @@ export class Travel{
     @Prop({ required: true, ref: 'users', type: MongooseSchema.Types.ObjectId })
     owner: User;
 
-    @Prop({ ref: 'users', type: [MongooseSchema.Types.ObjectId] })
-    partners: User[];
+    @Prop({ ref: 'users', type: [Partner] })
+    partners: Partner[];
 
     @Prop()
     gallery: Image[];

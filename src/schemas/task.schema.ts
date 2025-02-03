@@ -19,7 +19,7 @@ export class Task{
     @Prop()
     description: string;
 
-    // 0: Cancelado, 1: Pendiente, 2: En proceso, 3: Finalizado
+    // 0: Cancelled, 1: Pending, 2: In process, 3: Ended
     @Prop({ required: true, default: 0, enum: [0, 1, 2, 3] })
     status: number;
 

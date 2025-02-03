@@ -12,13 +12,12 @@ export class Attachment{
     @Prop({required: true, default: uuidv4, unique: true})
     uuid: string;
 
-    @Prop({ required: true })
     name: string;
 
     @Prop({required: true})
     url: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, default: 'i', enum: ['image', 'video', 'pdf', 'external'] })
     type: string;
 
     @Prop({ required: true, ref: 'users', type: MongooseSchema.Types.ObjectId })

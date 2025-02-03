@@ -9,6 +9,7 @@ import { Attachment, AttachmentSchema } from 'src/schemas/attachment.schema';
 import { Itinerary, ItinerarySchema } from 'src/schemas/itinerary.schema';
 import { Task, TaskSchema } from 'src/schemas/task.schema';
 import { Image, ImageSchema } from 'src/schemas/image.schema';
+import { Partner, PartnerSchema } from 'src/schemas/partner.schema';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { Image, ImageSchema } from 'src/schemas/image.schema';
       { name: Task.name, schema: TaskSchema },
       { name: Attachment.name, schema: AttachmentSchema },
       { name: Itinerary.name, schema: ItinerarySchema },
-      { name: Image.name, schema: ImageSchema }
+      { name: Image.name, schema: ImageSchema },
+      { name: Partner.name, schema: PartnerSchema }
     ])
   ],
   controllers: [TravelController],
